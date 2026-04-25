@@ -70,14 +70,15 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <main 
-        className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0a] text-white p-6 font-sans"
-        style={{
-          background: 'radial-gradient(ellipse at center, rgba(0,255,136,0.08) 0%, rgba(0,0,0,0) 60%, #0a0a0a 100%)',
-          backgroundColor: '#0a0a0a',
-          color: '#ffffff'
-        }}
-      >
+      <main style={{
+        minHeight: '100vh',
+        width: '100vw',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#0a0a0a',
+        background: 'radial-gradient(ellipse at 30% 50%, rgba(0,255,136,0.07) 0%, #0a0a0a 60%)',
+      }}>
         <div className="w-8 h-8 border-4 border-[#00ff88]/20 border-t-[#00ff88] rounded-full animate-spin"></div>
       </main>
     );
@@ -85,14 +86,15 @@ export default function Home() {
 
   if (!user) {
     return (
-      <main 
-        className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0a] text-white p-6 font-sans"
-        style={{
-          background: 'radial-gradient(ellipse at center, rgba(0,255,136,0.08) 0%, rgba(0,0,0,0) 60%, #0a0a0a 100%)',
-          backgroundColor: '#0a0a0a',
-          color: '#ffffff'
-        }}
-      >
+      <main style={{
+        minHeight: '100vh',
+        width: '100vw',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#0a0a0a',
+        background: 'radial-gradient(ellipse at 30% 50%, rgba(0,255,136,0.07) 0%, #0a0a0a 60%)',
+      }}>
         <div style={cardStyle}>
           <h1 style={{ color: '#ffffff', fontSize: '2rem', fontWeight: 700, margin: 0 }}>VidyaAI</h1>
           <p style={{ color: 'rgba(255,255,255,0.6)', margin: '8px 0 24px' }}>
@@ -119,14 +121,15 @@ export default function Home() {
   }
 
   return (
-    <main 
-      className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0a] text-white p-6 font-sans"
-      style={{
-        background: 'radial-gradient(ellipse at center, rgba(0,255,136,0.08) 0%, rgba(0,0,0,0) 60%, #0a0a0a 100%)',
-        backgroundColor: '#0a0a0a',
-        color: '#ffffff'
-      }}
-    >
+    <main style={{
+      minHeight: '100vh',
+      width: '100vw',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#0a0a0a',
+      background: 'radial-gradient(ellipse at 30% 50%, rgba(0,255,136,0.07) 0%, #0a0a0a 60%)',
+    }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -147,15 +150,27 @@ export default function Home() {
 
         <div className="w-full flex flex-col items-center gap-6">
           <div className="flex flex-col items-center">
-            {user.photoURL ? (
-              <img src={user.photoURL} alt="Profile" className="w-16 h-16 rounded-full mb-3 mx-auto" style={{ border: '2px solid #00ff88' }} />
+            {user?.photoURL ? (
+              <img 
+                src={user.photoURL}
+                alt={user.displayName ?? 'User'}
+                style={{
+                  width: '64px', height: '64px', 
+                  borderRadius: '50%',
+                  border: '2px solid #00ff88',
+                  objectFit: 'cover',
+                }}
+              />
             ) : (
-              <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3" style={{
+              <div style={{
+                width: '64px', height: '64px', borderRadius: '50%',
                 background: 'rgba(0,255,136,0.15)',
                 border: '2px solid #00ff88',
-                color: '#00ff88'
+                display: 'flex', alignItems: 'center', 
+                justifyContent: 'center',
+                color: '#00ff88', fontSize: '1.5rem', fontWeight: 700,
               }}>
-                {user?.displayName?.[0] ?? 'A'}
+                {user?.displayName?.[0]?.toUpperCase() ?? 'A'}
               </div>
             )}
             <p className="text-lg" style={{ color: '#ffffff', fontWeight: 600 }}>Welcome back, {user?.displayName?.split(' ')[0]}!</p>

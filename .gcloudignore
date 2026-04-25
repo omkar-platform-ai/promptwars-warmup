@@ -1,0 +1,17 @@
+# Use .gitignore as base
+.git
+.gitignore
+node_modules
+.next
+*.log
+
+# Allow .env.production — it only contains NEXT_PUBLIC_ keys (no secrets),
+# and must be present in the Cloud Build context so Next.js can bake real
+# Firebase config values into the client JS bundle at build time.
+!.env.production
+
+# Exclude all other env files
+.env
+.env.local
+.env.development
+.env.test

@@ -15,11 +15,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className="antialiased"
-        style={{
-          backgroundColor: '#0a0a0a',
-          minHeight: '100vh',
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        }}
+        style={{ margin: 0, padding: 0, backgroundColor: '#0a0a0a' }}
       >
         {children}
       </body>
