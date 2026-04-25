@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Explanation, QuizQuestion } from '../shared/types';
+import { auth } from '@/frontend/lib/firebase-client';
 
 const USE_MOCK = false;
 
@@ -28,6 +29,19 @@ const MOCK_QUIZ: QuizQuestion[] = [
   }
 ];
 
+// Helper to get auth headers for API calls
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const user = auth.currentUser;
+  if (!user) return { 'Content-Type': 'application/json' };
+  const token = await user.getIdToken();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+}
+
+export type OverlayType = 'success' | 'deeper' | null;
+
 export const useAdaptiveLearning = () => {
   const [topic, setTopic] = useState<string>('');
   const [level, setLevel] = useState<'L1' | 'L2'>('L1');
@@ -38,6 +52,17 @@ export const useAdaptiveLearning = () => {
   const [relatedTopics, setRelatedTopics] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [overlay, setOverlay] = useState<OverlayType>(null);
+
+  const showOverlay = useCallback((type: OverlayType, durationMs = 1500) => {
+    setOverlay(type);
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        setOverlay(null);
+        resolve();
+      }, durationMs);
+    });
+  }, []);
 
   const fetchTopic = useCallback(async (newTopic: string, requestedLevel: 'L1' | 'L2' = 'L1') => {
     setIsLoading(true);
@@ -50,16 +75,17 @@ export const useAdaptiveLearning = () => {
 
     try {
       if (USE_MOCK) {
-        // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 800));
         setExplanation(requestedLevel === 'L1' ? MOCK_EXPLANATION_L1 : MOCK_EXPLANATION_L2);
         setQuiz(MOCK_QUIZ);
       } else {
-        // Live API calls
+        const headers = await getAuthHeaders();
+        const numericLevel = requestedLevel === 'L1' ? 1 : 2;
+
         const expRes = await fetch('/api/explain', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ topic: newTopic, level: requestedLevel })
+          headers,
+          body: JSON.stringify({ topic: newTopic, level: numericLevel })
         });
         if (!expRes.ok) throw new Error('Failed to fetch explanation');
         const expData = await expRes.json();
@@ -67,8 +93,8 @@ export const useAdaptiveLearning = () => {
 
         const quizRes = await fetch('/api/quiz', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ topic: newTopic, level: requestedLevel })
+          headers,
+          body: JSON.stringify({ topic: newTopic, level: numericLevel })
         });
         if (!quizRes.ok) throw new Error('Failed to fetch quiz');
         const quizData = await quizRes.json();
@@ -100,34 +126,48 @@ export const useAdaptiveLearning = () => {
           setRelatedTopics(['Dynamic Programming', 'Trees and Graphs']);
         }
       } else {
-        // Send mastery update
-        const masteryRes = await fetch('/api/mastery', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            topicName: topic,
-            levelReached: level,
-            masteryScore: calculatedScore
-          })
+        // Fire-and-forget: don't block demo flow if Firestore is unavailable
+        setMasteryScore(calculatedScore);
+        getAuthHeaders().then(headers => {
+          fetch('/api/mastery', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              topicName: topic,
+              levelReached: level,
+              masteryScore: calculatedScore
+            })
+          }).catch(() => {}); // Silently fail
         });
-        if (!masteryRes.ok) throw new Error('Failed to update mastery');
-        const masteryData = await masteryRes.json();
-        setMasteryScore(masteryData.masteryScore);
 
         if (calculatedScore >= 50) {
-          setRelatedTopics(['Dynamic Programming', 'Trees and Graphs']); // Mocking related topics for now
+          setRelatedTopics(['Dynamic Programming', 'Trees and Graphs']);
         }
+      }
+
+      // Show the appropriate overlay before continuing
+      if (calculatedScore >= 50) {
+        await showOverlay('success', 1200);
+      } else {
+        await showOverlay('deeper', 1500);
+        // Auto-trigger level 2 after the overlay
+        setScore(null);
+        setQuiz(null);
+        setIsLoading(true);
+        await fetchTopic(topic, 'L2');
+        return; // fetchTopic handles setIsLoading(false)
       }
     } catch (err: any) {
       setError(err.message || 'Error submitting quiz');
     } finally {
       setIsLoading(false);
     }
-  }, [quiz, topic, level]);
+  }, [quiz, topic, level, showOverlay, fetchTopic]);
 
-  const goDeeper = useCallback(() => {
+  const goDeeper = useCallback(async () => {
+    await showOverlay('deeper', 1500);
     fetchTopic(topic, 'L2');
-  }, [fetchTopic, topic]);
+  }, [fetchTopic, topic, showOverlay]);
 
   return {
     topic,
@@ -139,6 +179,7 @@ export const useAdaptiveLearning = () => {
     relatedTopics,
     isLoading,
     error,
+    overlay,
     fetchTopic,
     submitQuiz,
     goDeeper

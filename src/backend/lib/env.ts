@@ -14,8 +14,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 
-// For Next.js, we must explicitly map the env variables
-// because process.env is not fully available in edge/browser environments
+// Support both NEXT_FIREBASE_ (local .env.local) and FIREBASE_ (Cloud Run secrets) prefixes
 export const env = envSchema.parse({
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   VERTEX_AI_LOCATION: process.env.VERTEX_AI_LOCATION,
@@ -25,7 +24,7 @@ export const env = envSchema.parse({
   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
-  FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
+  FIREBASE_CLIENT_EMAIL: process.env.NEXT_FIREBASE_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL,
+  FIREBASE_PRIVATE_KEY: process.env.NEXT_FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY,
   NODE_ENV: process.env.NODE_ENV,
 });

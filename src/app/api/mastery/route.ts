@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db, auth } from '../../../lib/firebase-admin';
+import { db, auth } from '@/backend/lib/firebase-admin';
 
 async function verifyAuth(req: Request) {
   const authHeader = req.headers.get('Authorization');
@@ -19,24 +19,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { userId, topic, level, score, timestamp, attempts } = await req.json();
+    const { topicName, levelReached, masteryScore } = await req.json();
 
-    if (!userId || !topic || level === undefined || score === undefined || !timestamp) {
+    if (!topicName || !levelReached || masteryScore === undefined) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Write to Firestore collection: users/{userId}/mastery/{topic}
-    const masteryRef = db.collection('users').doc(userId).collection('mastery').doc(topic);
+    const userId = decodedToken.uid;
+
+    // Write to Firestore collection: users/{userId}/mastery/{topicName}
+    const masteryRef = db.collection('users').doc(userId).collection('mastery').doc(topicName);
 
     await masteryRef.set({
-      topic,
-      level,
-      score,
-      timestamp,
-      attempts: attempts || 1
+      topicName,
+      levelReached,
+      masteryScore,
+      timestamp: new Date().toISOString(),
     }, { merge: true });
 
-    return NextResponse.json({ success: true, topic, level, score });
+    return NextResponse.json({ success: true, topicName, levelReached, masteryScore });
   } catch (error: any) {
     console.error('Mastery API Error:', error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });

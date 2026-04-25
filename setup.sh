@@ -28,7 +28,8 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 
 # Create secrets in Secret Manager
 echo "Creating secrets..."
-gcloud secrets create FIREBASE_CONFIG --replication-policy="automatic" || true
+gcloud secrets create FIREBASE_CLIENT_EMAIL --replication-policy="automatic" || true
+gcloud secrets create FIREBASE_PRIVATE_KEY --replication-policy="automatic" || true
 gcloud secrets create GOOGLE_CLOUD_PROJECT --replication-policy="automatic" || true
 gcloud secrets create VERTEX_AI_LOCATION --replication-policy="automatic" || true
 

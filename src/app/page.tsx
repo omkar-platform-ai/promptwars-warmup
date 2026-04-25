@@ -28,8 +28,9 @@ export default function Home() {
           const querySnapshot = await getDocs(q);
           const topics = querySnapshot.docs.map(doc => doc.data() as MasteryRecord);
           setRecentTopics(topics);
-        } catch (error) {
-          console.error("Error fetching recent topics:", error);
+        } catch {
+          // Firestore may not be available yet — silently continue
+          setRecentTopics([]);
         }
       }
       setIsLoading(false);
@@ -54,74 +55,156 @@ export default function Home() {
     }
   };
 
+  const cardStyle = {
+    maxWidth: '400px',
+    width: '100%',
+    padding: '40px 32px',
+    background: 'rgba(255,255,255,0.05)',
+    backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '16px',
+    textAlign: 'center' as const,
+    boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+    margin: '0 auto'
+  };
+
+  if (isLoading) {
+    return (
+      <main 
+        className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0a] text-white p-6 font-sans"
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(0,255,136,0.08) 0%, rgba(0,0,0,0) 60%, #0a0a0a 100%)',
+          backgroundColor: '#0a0a0a',
+          color: '#ffffff'
+        }}
+      >
+        <div className="w-8 h-8 border-4 border-[#00ff88]/20 border-t-[#00ff88] rounded-full animate-spin"></div>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main 
+        className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0a] text-white p-6 font-sans"
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(0,255,136,0.08) 0%, rgba(0,0,0,0) 60%, #0a0a0a 100%)',
+          backgroundColor: '#0a0a0a',
+          color: '#ffffff'
+        }}
+      >
+        <div style={cardStyle}>
+          <h1 style={{ color: '#ffffff', fontSize: '2rem', fontWeight: 700, margin: 0 }}>VidyaAI</h1>
+          <p style={{ color: 'rgba(255,255,255,0.6)', margin: '8px 0 24px' }}>
+            Learn anything. At your pace.
+          </p>
+          <button
+            onClick={handleSignIn}
+            aria-label="Sign in with Google"
+            style={{
+              width: '100%', padding: '14px',
+              background: '#00ff88', color: '#000000',
+              border: 'none', borderRadius: '10px',
+              fontSize: '1rem', fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', 
+              justifyContent: 'center', gap: '10px',
+            }}
+          >
+            <img src="https://www.google.com/favicon.ico" width="18" height="18" alt="G" />
+            Continue with Google
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6 font-sans">
+    <main 
+      className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0a] text-white p-6 font-sans"
+      style={{
+        background: 'radial-gradient(ellipse at center, rgba(0,255,136,0.08) 0%, rgba(0,0,0,0) 60%, #0a0a0a 100%)',
+        backgroundColor: '#0a0a0a',
+        color: '#ffffff'
+      }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-md bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8 shadow-2xl flex flex-col items-center text-center"
+        className="max-w-md w-full mx-auto px-8 py-10 rounded-2xl flex flex-col items-center text-center"
+        style={{
+          background: 'linear-gradient(135deg, #0d1f17 0%, #0a0a0a 100%)',
+          border: '1px solid rgba(0,255,136,0.2)',
+          boxShadow: '0 0 60px rgba(0,255,136,0.08), 0 20px 40px rgba(0,0,0,0.4)'
+        }}
       >
-        <h1 className="text-4xl font-bold mb-2 tracking-tight">VidyaAI</h1>
-        <p className="text-gray-400 mb-8 text-lg">Learn anything. At your pace.</p>
+        <h1 className="text-4xl font-bold mb-2 tracking-tight" style={{
+          background: 'linear-gradient(135deg, #00ff88, #00cc6a)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}>VidyaAI</h1>
+        <p className="mb-8 text-lg" style={{ color: 'rgba(255,255,255,0.6)' }}>Learn anything. At your pace.</p>
 
-        {isLoading ? (
-          <div className="animate-pulse w-full h-12 bg-white/10 rounded-lg"></div>
-        ) : user ? (
-          <div className="w-full flex flex-col items-center gap-6">
-            <div className="flex flex-col items-center">
-              <img src={user.photoURL || ''} alt="Profile" className="w-16 h-16 rounded-full mb-3 border-2 border-[#00ff88]" />
-              <p className="text-lg">Welcome back, {user.displayName?.split(' ')[0]}!</p>
-            </div>
-
-            {recentTopics.length > 0 && (
-              <div className="w-full bg-black/20 rounded-xl p-4 text-left border border-white/5">
-                <h3 className="text-sm text-gray-400 uppercase tracking-wider mb-3">Recent Topics</h3>
-                <ul className="space-y-2">
-                  {recentTopics.map((record, i) => (
-                    <li key={i} className="flex justify-between items-center text-sm">
-                      <span>{record.topicName}</span>
-                      <span className="text-[#00ff88] text-xs px-2 py-1 bg-[#00ff88]/10 rounded-full">{record.levelReached}</span>
-                    </li>
-                  ))}
-                </ul>
+        <div className="w-full flex flex-col items-center gap-6">
+          <div className="flex flex-col items-center">
+            {user.photoURL ? (
+              <img src={user.photoURL} alt="Profile" className="w-16 h-16 rounded-full mb-3 mx-auto" style={{ border: '2px solid #00ff88' }} />
+            ) : (
+              <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3" style={{
+                background: 'rgba(0,255,136,0.15)',
+                border: '2px solid #00ff88',
+                color: '#00ff88'
+              }}>
+                {user?.displayName?.[0] ?? 'A'}
               </div>
             )}
-
-            <button
-              onClick={() => router.push('/learn')}
-              className="w-full bg-[#00ff88] hover:bg-[#00cc6a] text-black font-semibold py-3 px-6 rounded-xl transition-colors duration-200"
-            >
-              Start Learning
-            </button>
-            <button
-              onClick={() => router.push('/mastery')}
-              className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-3 px-6 rounded-xl transition-colors duration-200"
-            >
-              Mastery Dashboard
-            </button>
-
-            <button
-              onClick={handleSignOut}
-              className="text-sm text-gray-500 hover:text-gray-300 mt-2 transition-colors"
-            >
-              Sign out
-            </button>
+            <p className="text-lg" style={{ color: '#ffffff', fontWeight: 600 }}>Welcome back, {user?.displayName?.split(' ')[0]}!</p>
           </div>
-        ) : (
+
+          {recentTopics.length > 0 && (
+            <div className="w-full bg-black/20 rounded-xl p-4 text-left border border-white/5">
+              <h3 className="text-sm text-gray-400 uppercase tracking-wider mb-3">Recent Topics</h3>
+              <ul className="space-y-2">
+                {recentTopics.map((record, i) => (
+                  <li key={i} className="flex justify-between items-center text-sm">
+                    <span>{record.topicName}</span>
+                    <span className="text-[#00ff88] text-xs px-2 py-1 bg-[#00ff88]/10 rounded-full">{record.levelReached}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <button
-            onClick={handleSignIn}
-            className="w-full flex items-center justify-center gap-3 bg-white text-black font-medium py-3 px-6 rounded-xl hover:bg-gray-200 transition-colors duration-200"
+            onClick={() => router.push('/learn')}
+            aria-label="Start learning about this topic"
+            className="w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+            style={{ background: '#00ff88', color: '#000000' }}
+            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 20px rgba(0,255,136,0.4)'}
+            onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-            </svg>
-            Sign in with Google
+            Start Learning
           </button>
-        )}
+          <button
+            onClick={() => router.push('/mastery')}
+            className="w-full bg-white/10 hover:bg-white/20 font-medium py-3 px-6 rounded-xl transition-colors duration-200"
+            style={{
+              border: '1px solid rgba(0,255,136,0.2)',
+              color: 'rgba(0,255,136,0.8)'
+            }}
+          >
+            Mastery Dashboard
+          </button>
+
+          <button
+            onClick={handleSignOut}
+            aria-label="Sign out"
+            className="text-sm hover:text-white mt-2 transition-colors"
+            style={{ color: 'rgba(255,255,255,0.6)' }}
+          >
+            Sign out
+          </button>
+        </div>
       </motion.div>
     </main>
   );

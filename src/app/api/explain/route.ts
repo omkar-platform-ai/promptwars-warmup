@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server';
-import { VertexAI } from '@google-cloud/vertexai';
-import { env } from '../../../lib/env';
-import { auth } from '../../../lib/firebase-admin';
+import { GoogleGenAI } from '@google/genai';
+import { auth } from '@/backend/lib/firebase-admin';
 
-// Initialize Vertex AI
-const vertexAi = new VertexAI({
-  project: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  location: env.VERTEX_AI_LOCATION || 'us-central1',
-});
-
-// Initialize Gemini Model
-const geminiModel = vertexAi.getGenerativeModel({
-  model: 'gemini-2.0-flash-001',
+// Use the new Google GenAI SDK with Vertex AI backend
+const ai = new GoogleGenAI({
+  vertexai: true,
+  project: process.env.VERTEX_AI_PROJECT || 'promptwars-pnq01',
+  location: 'us-central1',
 });
 
 // Helper for auth validation
@@ -21,7 +16,7 @@ async function verifyAuth(req: Request) {
   const token = authHeader.split('Bearer ')[1];
   try {
     return await auth.verifyIdToken(token);
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -29,7 +24,7 @@ async function verifyAuth(req: Request) {
 // 15s timeout wrapper
 async function withTimeout<T>(promise: Promise<T>): Promise<T> {
   const timeout = new Promise<never>((_, reject) => 
-    setTimeout(() => reject(new Error('Vertex AI Timeout')), 15000)
+    setTimeout(() => reject(new Error('AI Timeout')), 30000)
   );
   return Promise.race([promise, timeout]);
 }
@@ -55,8 +50,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid level' }, { status: 400 });
     }
 
-    const response = await withTimeout(geminiModel.generateContent(prompt));
-    const content = response.response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+      })
+    );
+    const content = response.text || '';
 
     return NextResponse.json({ topic, level: level === 1 ? 'L1' : 'L2', content });
   } catch (error: any) {

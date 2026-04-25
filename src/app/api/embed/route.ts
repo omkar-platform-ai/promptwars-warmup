@@ -1,15 +1,11 @@
 import { NextResponse } from 'next/server';
-import { VertexAI } from '@google-cloud/vertexai';
-import { env } from '../../../lib/env';
-import { auth } from '../../../lib/firebase-admin';
+import { GoogleGenAI } from '@google/genai';
+import { auth } from '@/backend/lib/firebase-admin';
 
-const vertexAi = new VertexAI({
-  project: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  location: env.VERTEX_AI_LOCATION || 'us-central1',
-});
-
-const embedModel = vertexAi.getGenerativeModel({
-  model: 'text-embedding-004',
+const ai = new GoogleGenAI({
+  vertexai: true,
+  project: process.env.VERTEX_AI_PROJECT || 'promptwars-pnq01',
+  location: 'us-central1',
 });
 
 const SEED_TOPICS = [
@@ -19,24 +15,15 @@ const SEED_TOPICS = [
   'probability', 'statistics'
 ];
 
-let seedEmbeddingsCache: { topic: string, vector: number[] }[] = [];
-
 async function verifyAuth(req: Request) {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return null;
   const token = authHeader.split('Bearer ')[1];
   try {
     return await auth.verifyIdToken(token);
-  } catch (error) {
+  } catch {
     return null;
   }
-}
-
-async function withTimeout<T>(promise: Promise<T>): Promise<T> {
-  const timeout = new Promise<never>((_, reject) => 
-    setTimeout(() => reject(new Error('Vertex AI Timeout')), 15000)
-  );
-  return Promise.race([promise, timeout]);
 }
 
 function cosineSimilarity(a: number[], b: number[]) {
@@ -46,11 +33,21 @@ function cosineSimilarity(a: number[], b: number[]) {
   return dot / (normA * normB);
 }
 
+const embeddingCache = new Map<string, number[]>();
+
 async function getEmbedding(text: string): Promise<number[]> {
-  const response = await withTimeout(embedModel.embedContent(text));
-  // Adjust depending on actual response shape from SDK.
-  // Generally @google-cloud/vertexai embedContent returns something like:
-  return response.embeddings?.[0]?.values || response.embedding?.values || [];
+  if (embeddingCache.has(text)) {
+    return embeddingCache.get(text)!;
+  }
+  const response = await ai.models.embedContent({
+    model: 'text-embedding-005',
+    contents: text,
+  });
+  const embedding = response.embeddings?.[0]?.values || [];
+  if (embedding.length > 0) {
+    embeddingCache.set(text, embedding);
+  }
+  return embedding;
 }
 
 export async function POST(req: Request) {
@@ -65,14 +62,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing topic' }, { status: 400 });
     }
 
-    // Populate cache on first request
-    if (seedEmbeddingsCache.length === 0) {
-      const embeds = await Promise.all(SEED_TOPICS.map(t => getEmbedding(t)));
-      seedEmbeddingsCache = SEED_TOPICS.map((t, i) => ({
-        topic: t,
-        vector: embeds[i]
-      }));
-    }
+    // Ensure all seed topics are cached and retrieve them
+    const embeds = await Promise.all(SEED_TOPICS.map(t => getEmbedding(t)));
+    const seedEmbeddingsCache = SEED_TOPICS.map((t, i) => ({
+      topic: t,
+      vector: embeds[i]
+    }));
 
     const topicVector = await getEmbedding(topic);
     if (!topicVector || topicVector.length === 0) {
