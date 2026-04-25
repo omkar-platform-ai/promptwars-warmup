@@ -8,7 +8,7 @@ COPY . .
 
 # NEXT_PUBLIC_ vars must be present at build time — Next.js inlines them
 # into the client JS bundle. These are public Firebase config, not secrets.
-ENV NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyBljXWL_tu0XIhLz15vxy1MkDOXqceBsS8
+ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY
 ENV NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=promptwars-warmup-b71ce.firebaseapp.com
 ENV NEXT_PUBLIC_FIREBASE_PROJECT_ID=promptwars-warmup-b71ce
 ENV NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=promptwars-warmup-b71ce.firebasestorage.app
