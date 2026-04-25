@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AnalyticsInit } from "./AnalyticsInit";
 
 export const metadata: Metadata = {
   title: "VidyaAI — Adaptive Learning",
@@ -17,6 +18,7 @@ export default function RootLayout({
         className="antialiased"
         style={{ margin: 0, padding: 0, backgroundColor: '#0a0a0a' }}
       >
+        <AnalyticsInit />
         {children}
       </body>
     </html>
